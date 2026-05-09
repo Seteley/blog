@@ -15,10 +15,12 @@ async def lifespan(app: FastAPI):
     try:
         gen = get_db_connection()
         conn = next(gen)
-        ArticleService(ArticleRepository(conn)).ensure_db_initialized()
-        conn.commit()
-        conn.close()
-        print("Database schema initialized.")
+        try:
+            ArticleService(ArticleRepository(conn)).ensure_db_initialized()
+            conn.commit()
+            print("Database schema initialized.")
+        finally:
+            conn.close()
     except Exception as exc:
         print(f"Warning: could not initialize DB schema — {exc}")
     yield
