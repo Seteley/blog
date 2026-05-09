@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Your_Strong_Password_123!
+      POSTGRES_DB: blog_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DB_SERVER: 'db'
+      DB_NAME: 'blog_db'
+      DB_USER: 'postgres'
+      DB_PASSWORD: 'Your_Strong_Password_123!'
+      DB_PORT: '5432'
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
