@@ -1,0 +1,6 @@
+# Para desarrollo local — un solo contenedor igual que en Render.
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"

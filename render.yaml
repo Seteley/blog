@@ -1,0 +1,11 @@
+# render.yaml — un solo servicio Docker, PostgreSQL incluido en el contenedor.
+# No requiere base de datos externa ni variables de entorno adicionales.
+
+services:
+  - type: web
+    name: blog-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    plan: free
+    healthCheckPath: /health
