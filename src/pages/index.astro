@@ -1,0 +1,97 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+
+const articles = [
+  {
+    title: "Artículo 1",
+    description: "Descripción breve del primer artículo. Agrega aquí un resumen de lo que trata.",
+    href: "/blog/articulos/articulo-1",
+    date: "2025-01-15",
+  },
+  {
+    title: "Artículo 2",
+    description: "Descripción breve del segundo artículo. Agrega aquí un resumen de lo que trata.",
+    href: "/blog/articulos/articulo-2",
+    date: "2025-02-10",
+  },
+  {
+    title: "Artículo 3",
+    description: "Descripción breve del tercer artículo. Agrega aquí un resumen de lo que trata.",
+    href: "/blog/articulos/articulo-3",
+    date: "2025-03-05",
+  },
+  {
+    title: "Artículo 4",
+    description: "Descripción breve del cuarto artículo. Agrega aquí un resumen de lo que trata.",
+    href: "/blog/articulos/articulo-4",
+    date: "2025-04-20",
+  },
+];
+---
+
+<Layout title="Sergio Tejeda — Blog">
+  <style>
+    .hero {
+      text-align: center;
+      padding: 3rem 0 3.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 3rem;
+    }
+
+    .hero-name {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-subtitle {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1.5rem;
+    }
+
+    .articles-grid {
+      display: grid;
+      gap: 1.25rem;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    }
+
+    @media (max-width: 600px) {
+      .articles-grid { grid-template-columns: 1fr; }
+      .hero-name { font-size: 1.8rem; }
+    }
+  </style>
+
+  <div class="hero">
+    <h1 class="hero-name">Sergio Tejeda</h1>
+    <p class="hero-subtitle">Desarrollo adaptativo e integración de SW</p>
+  </div>
+
+  <p class="section-title">Artículos</p>
+
+  <div class="articles-grid">
+    {articles.map(article => (
+      <ArticleCard
+        title={article.title}
+        description={article.description}
+        href={article.href}
+        date={article.date}
+      />
+    ))}
+  </div>
+</Layout>

@@ -1,0 +1,117 @@
+---
+import Layout from './Layout.astro';
+
+interface Props {
+  frontmatter: {
+    title: string;
+    description: string;
+    date: string;
+  };
+}
+
+const { frontmatter } = Astro.props;
+const formattedDate = new Date(frontmatter.date).toLocaleDateString('es-MX', {
+  year: 'numeric', month: 'long', day: 'numeric'
+});
+---
+
+<Layout title={`${frontmatter.title} — Sergio Tejeda`}>
+  <style>
+    .breadcrumb {
+      margin-bottom: 2rem;
+    }
+    .breadcrumb a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .breadcrumb a:hover { text-decoration: underline; }
+
+    .article-header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .article-header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    .article-meta {
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    .article-description {
+      color: var(--muted);
+      margin-top: 0.5rem;
+      font-size: 1rem;
+      font-style: italic;
+    }
+
+    .article-body {
+      line-height: 1.8;
+      font-size: 1.05rem;
+    }
+
+    .article-body :global(h2) {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 2rem 0 0.75rem;
+      color: var(--accent);
+    }
+
+    .article-body :global(h3) {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.5rem;
+    }
+
+    .article-body :global(p) {
+      margin-bottom: 1.25rem;
+      color: var(--text);
+    }
+
+    .article-body :global(ul), .article-body :global(ol) {
+      padding-left: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .article-body :global(li) {
+      margin-bottom: 0.4rem;
+    }
+
+    .article-body :global(code) {
+      background: var(--surface);
+      padding: 0.1em 0.4em;
+      border-radius: 4px;
+      font-size: 0.9em;
+      color: var(--accent);
+    }
+
+    .article-body :global(blockquote) {
+      border-left: 3px solid var(--accent);
+      padding-left: 1rem;
+      color: var(--muted);
+      margin: 1.5rem 0;
+    }
+  </style>
+
+  <div class="breadcrumb">
+    <a href="/blog">← Volver al inicio</a>
+  </div>
+
+  <div class="article-header">
+    <h1>{frontmatter.title}</h1>
+    <div class="article-meta">{formattedDate}</div>
+    {frontmatter.description && <p class="article-description">{frontmatter.description}</p>}
+  </div>
+
+  <div class="article-body">
+    <slot />
+  </div>
+</Layout>
