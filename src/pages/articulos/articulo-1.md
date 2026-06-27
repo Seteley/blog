@@ -50,6 +50,13 @@ Se priorizaron **documentación oficial del fabricante**, **whitepapers de bench
 
 ## 3. Análisis técnico
 
+> **Nota metodológica — tres supuestos sobre los que descansan los cálculos.** Los datos de capacidad y latencia provienen de fuentes citadas (documentación oficial de AWS [1]–[4], benchmarks de Alfresco [6][7][8] y medición independiente [5]). Sobre ellos se aplican tres supuestos propios que conviene tener presentes, porque mueven los números derivados:
+> 1. **Mezcla de trabajo 70 % lectura / 30 % escritura.** Es un perfil ECM típico asumido, no medido. Cambiarla altera el reparto 420/180 y, en cascada, la amplificación de I/O y el dimensionamiento de nodos.
+> 2. **Factores de amplificación de I/O (≈4–7 por escritura, ≈2 por lectura).** Son estimaciones derivadas de la arquitectura de tres capas de Alfresco, no mediciones directas; por eso el resultado se expresa como rango (2,6–3,5×).
+> 3. **Latencia media de Alfresco ≈ 500 ms.** Es un promedio asumido entre el "< 1 s" típico y el "< 4,5 s" del peor caso de los benchmarks. Afecta solo al cálculo de concurrencia (Tabla 5); la conclusión cualitativa (~10× más concurrencia que S3) se mantiene en todo el rango razonable.
+>
+> La aritmética de cada cálculo es exacta; lo que conviene validar con una prueba de carga propia son estos tres supuestos.
+
 ### 3.1 Modelo de comparación: ¿qué es una "operación"?
 
 Para comparar de forma honesta, se define una **operación lógica** como una acción de negocio del usuario, y se mide cuánta **I/O física** genera en cada plataforma.
@@ -83,7 +90,7 @@ La diferencia estructural es que en **S3 una operación lógica ≈ una operaci�
   <rect x="120" y="165" width="180" height="44" rx="6" fill="#e8f3f0" stroke="#2c7a6b"/>
   <text x="210" y="185" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a3d36">Repositorio ACS</text>
   <text x="210" y="201" text-anchor="middle" font-size="11" fill="#356b60">(N nodos · CMIS/REST)</text>
-  <line x1="160" y1="209" x2="95" y2="255" stroke="#2c7a6b" stroke-width="2"/>
+  <line x1="160" y1="209" x2="95"  y2="255" stroke="#2c7a6b" stroke-width="2"/>
   <line x1="210" y1="209" x2="210" y2="255" stroke="#2c7a6b" stroke-width="2"/>
   <line x1="260" y1="209" x2="325" y2="255" stroke="#2c7a6b" stroke-width="2"/>
   <rect x="35" y="255" width="120" height="70" rx="6" fill="#fef0e8" stroke="#d9743a"/>
@@ -101,7 +108,7 @@ La diferencia estructural es que en **S3 una operación lógica ≈ una operaci�
   <text x="325" y="307" text-anchor="middle" font-size="10" fill="#553a7a">full-text</text>
   <text x="325" y="319" text-anchor="middle" font-size="10" fill="#553a7a">(1 I/O)</text>
   <rect x="60" y="360" width="300" height="70" rx="8" fill="#fff6f3" stroke="#d9743a" stroke-dasharray="4 3"/>
-  <text x="210" y="385" text-anchor="middle" font-size="13" font-weight="700" fill="#a8521f">1 escritura lógica → ≈ 4–7 I/O backend</text>
+  <text x="210" y="385" text-anchor="middle" font-size="13" font-weight="700" fill="#a8521f">1 escritura lógica  →  ≈ 4–7 I/O backend</text>
   <text x="210" y="408" text-anchor="middle" font-size="11" fill="#a8521f">Amplificación de I/O elevada</text>
   <rect x="420" y="55" width="380" height="395" rx="10" fill="#ffffff" stroke="#e07c1f" stroke-width="2"/>
   <text x="610" y="82" text-anchor="middle" font-size="15" font-weight="700" fill="#e07c1f">Amazon S3</text>
@@ -117,7 +124,7 @@ La diferencia estructural es que en **S3 una operación lógica ≈ una operaci�
   <text x="610" y="298" text-anchor="middle" font-size="10.5" fill="#b56a23">prefijos · gestionado · auto-escalado</text>
   <text x="610" y="313" text-anchor="middle" font-size="10.5" fill="#b56a23">(replicación interna transparente)</text>
   <rect x="460" y="360" width="300" height="70" rx="8" fill="#fff8f0" stroke="#e07c1f" stroke-dasharray="4 3"/>
-  <text x="610" y="385" text-anchor="middle" font-size="13" font-weight="700" fill="#9c5510">1 escritura lógica → ≈ 1 I/O backend</text>
+  <text x="610" y="385" text-anchor="middle" font-size="13" font-weight="700" fill="#9c5510">1 escritura lógica  →  ≈ 1 I/O backend</text>
   <text x="610" y="408" text-anchor="middle" font-size="11" fill="#9c5510">Amplificación de I/O ≈ 1 (gestionada)</text>
 </svg>
 
@@ -136,21 +143,21 @@ Los límites publicados por AWS son **≥ 3.500 escrituras/seg** y **≥ 5.500 l
 - Escrituras: 180 / 3.500 = **5,1 %** de la capacidad de **un** prefijo → *headroom* ≈ **19×**.
 - Lecturas: 420 / 5.500 = **7,6 %** de la capacidad de **un** prefijo → *headroom* ≈ **13×**.
 
-<svg viewBox="0 0 820 340" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
-  <rect x="0" y="0" width="820" height="340" rx="10" fill="#f7f9fb"/>
+<svg viewBox="0 0 820 320" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="0" y="0" width="820" height="320" rx="10" fill="#f7f9fb"/>
   <text x="410" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#1a2b34">S3: carga a 600 ops/seg frente al límite de UN prefijo</text>
-  <text x="155" y="125" text-anchor="end" font-size="12" font-weight="700" fill="#33485f">Escritura</text>
-  <rect x="165" y="108" width="580" height="34" rx="4" fill="#fde6cf" stroke="#e07c1f"/>
-  <text x="455" y="130" text-anchor="middle" font-size="11" fill="#9c5510">límite ≥ 3.500/seg por prefijo</text>
-  <rect x="165" y="108" width="30" height="34" rx="4" fill="#e07c1f"/>
-  <text x="180" y="101" text-anchor="middle" font-size="10" font-weight="700" fill="#e07c1f">180/seg</text>
-  <text x="155" y="215" text-anchor="end" font-size="12" font-weight="700" fill="#33485f">Lectura</text>
-  <rect x="165" y="198" width="580" height="34" rx="4" fill="#fde6cf" stroke="#e07c1f"/>
-  <text x="455" y="220" text-anchor="middle" font-size="11" fill="#9c5510">límite ≥ 5.500/seg por prefijo</text>
-  <rect x="165" y="198" width="44" height="34" rx="4" fill="#e07c1f"/>
-  <text x="187" y="191" text-anchor="middle" font-size="10" font-weight="700" fill="#e07c1f">420/seg</text>
-  <text x="410" y="272" text-anchor="middle" font-size="11.5" fill="#356b60" font-weight="700">A 600 ops/seg se usa el 5–8 % de un único prefijo:</text>
-  <text x="410" y="291" text-anchor="middle" font-size="11.5" fill="#356b60" font-weight="700">~13–19× de margen, sin diseño especial</text>
+  <line x1="170" y1="270" x2="780" y2="270" stroke="#cdd6dd" stroke-width="1.5"/>
+  <text x="160" y="120" text-anchor="end" font-size="12" font-weight="700" fill="#33485f">Escritura</text>
+  <rect x="170" y="100" width="382" height="32" rx="4" fill="#fde6cf" stroke="#e07c1f"/>
+  <text x="556" y="120" font-size="11" fill="#9c5510">límite ≥ 3.500/seg por prefijo</text>
+  <rect x="170" y="100" width="20" height="32" rx="4" fill="#e07c1f"/>
+  <text x="196" y="121" font-size="11" font-weight="700" fill="#9c5510">180/seg</text>
+  <text x="160" y="200" text-anchor="end" font-size="12" font-weight="700" fill="#33485f">Lectura</text>
+  <rect x="170" y="180" width="600" height="32" rx="4" fill="#fde6cf" stroke="#e07c1f"/>
+  <text x="470" y="200" font-size="11" fill="#9c5510" text-anchor="middle">límite ≥ 5.500/seg por prefijo</text>
+  <rect x="170" y="180" width="46" height="32" rx="4" fill="#e07c1f"/>
+  <text x="222" y="201" font-size="11" font-weight="700" fill="#9c5510">420/seg</text>
+  <text x="410" y="258" text-anchor="middle" font-size="12" fill="#356b60" font-weight="700">A 600 ops/seg se usa el 5–8 % de un único prefijo: ~13–19× de margen, sin diseño especial</text>
 </svg>
 
 ***Figura 2.** Carga de 600 ops/seg (180 escrituras + 420 lecturas) frente al límite de un único prefijo de S3. **Fuente:** límites de 3.500 escr./5.500 lect. por prefijo de la documentación oficial de AWS [1][2]; cálculo de porcentajes y headroom de elaboración propia.*
@@ -161,9 +168,11 @@ Los benchmarks sitúan el rendimiento de **un nodo de repositorio** en torno a *
 
 Dimensionamiento estimado para **600 ops/seg** (cifras orientativas derivadas de [6][7][8]):
 
+> **Sobre el rango de nodos.** Las tasas de benchmark (100–140 docs/seg por nodo) son de **ingesta (escritura)**. Si se tratan como ops mixtas directas, el resultado conservador es 600 ÷ 100 = **6 nodos** a 600 ÷ 140 ≈ **5 nodos**. Solo bajo un modelo de "presupuesto de I/O" (donde las lecturas, ≈2 I/O, cuestan menos que las escrituras, ≈5 I/O) y con la mezcla 70/30, la capacidad mixta por nodo sube a ~172 ops/seg y bastarían **4 nodos**. Por eso el límite inferior de 4 es optimista y se reserva para cargas muy intensivas en lectura.
+
 | Capa | Métrica de referencia | Necesidad estimada a 600 ops/seg |
 |------|-----------------------|----------------------------------|
-| Repositorio ACS | ~100–140 ops/seg por nodo | **4–6 nodos** (según mezcla L/E) |
+| Repositorio ACS | ~100–140 ops/seg por nodo | **5–6 nodos** (4 solo si la carga es muy intensiva en lectura) |
 | Motor de índice (Solr) | indexación > 2.000 docs/seg con *sharding* [6] | 1+ *shard*; *sharding* recomendado a escala |
 | Base de datos | el cuello frecuente en escritura | Instancia con IOPS provisionados / Aurora |
 | Content store | disco con mayor cola en pruebas [7] | Almacenamiento con IOPS dedicados |
@@ -174,20 +183,28 @@ Dimensionamiento estimado para **600 ops/seg** (cifras orientativas derivadas de
   <rect x="0" y="0" width="820" height="300" rx="10" fill="#f7f9fb"/>
   <text x="410" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#1a2b34">Alfresco: nodos de repositorio para alcanzar 600 ops/seg</text>
   <line x1="120" y1="250" x2="780" y2="250" stroke="#cdd6dd" stroke-width="1.5"/>
-  <line x1="120" y1="80" x2="780" y2="80" stroke="#d9743a" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <line x1="120" y1="80"  x2="780" y2="80"  stroke="#d9743a" stroke-width="1.5" stroke-dasharray="6 4"/>
   <text x="775" y="74" text-anchor="end" font-size="11" font-weight="700" fill="#a8521f">objetivo 600 ops/seg</text>
-  <rect x="170" y="219" width="70" height="31" fill="#2c7a6b"/>
-  <text x="205" y="270" text-anchor="middle" font-size="11" fill="#33485f">1 nodo</text>
-  <text x="205" y="212" text-anchor="middle" font-size="10" fill="#2c7a6b">110</text>
-  <rect x="330" y="156" width="70" height="94" fill="#2c7a6b"/>
-  <text x="365" y="270" text-anchor="middle" font-size="11" fill="#33485f">3 nodos</text>
-  <text x="365" y="149" text-anchor="middle" font-size="10" fill="#2c7a6b">330</text>
-  <rect x="490" y="94" width="70" height="156" fill="#2c7a6b"/>
-  <text x="525" y="270" text-anchor="middle" font-size="11" fill="#33485f">5 nodos</text>
-  <text x="525" y="87" text-anchor="middle" font-size="10" fill="#2c7a6b">550</text>
-  <rect x="650" y="63" width="70" height="187" fill="#1f5e52"/>
-  <text x="685" y="270" text-anchor="middle" font-size="11" fill="#33485f">6 nodos</text>
-  <text x="685" y="56" text-anchor="middle" font-size="10" font-weight="700" fill="#1f5e52">660</text>
+  <g>
+    <rect x="170" y="219" width="70" height="31" fill="#2c7a6b"/>
+    <text x="205" y="270" text-anchor="middle" font-size="11" fill="#33485f">1 nodo</text>
+    <text x="205" y="212" text-anchor="middle" font-size="10" fill="#2c7a6b">110</text>
+  </g>
+  <g>
+    <rect x="330" y="156" width="70" height="94" fill="#2c7a6b"/>
+    <text x="365" y="270" text-anchor="middle" font-size="11" fill="#33485f">3 nodos</text>
+    <text x="365" y="149" text-anchor="middle" font-size="10" fill="#2c7a6b">330</text>
+  </g>
+  <g>
+    <rect x="490" y="94" width="70" height="156" fill="#2c7a6b"/>
+    <text x="525" y="270" text-anchor="middle" font-size="11" fill="#33485f">5 nodos</text>
+    <text x="525" y="87" text-anchor="middle" font-size="10" fill="#2c7a6b">550</text>
+  </g>
+  <g>
+    <rect x="650" y="63" width="70" height="187" fill="#1f5e52"/>
+    <text x="685" y="270" text-anchor="middle" font-size="11" fill="#33485f">6 nodos</text>
+    <text x="685" y="56" text-anchor="middle" font-size="10" font-weight="700" fill="#1f5e52">660 ✓</text>
+  </g>
   <text x="125" y="255" text-anchor="end" font-size="10" fill="#7c8a93">ops/seg</text>
 </svg>
 
@@ -204,24 +221,27 @@ La métrica más reveladora a igual carga de **600 ops/seg lógicas** es cuánta
 | Plataforma | I/O por escritura | I/O por lectura | I/O física total estimada a 600 ops/seg (180 E / 420 L) |
 |-----------|-------------------|-----------------|---------------------------------------------------------|
 | **Amazon S3** | ≈ 1 | ≈ 1 | **≈ 600 ops** de almacenamiento (gestionadas/transparentes) |
-| **Alfresco** | ≈ 4–7 (BD + content store + Solr) | ≈ 2 (BD + content store) | **≈ 180×5 + 420×2 ≈ 900 + 840 ≈ 1.740 I/O** repartidas en 3 subsistemas |
+| **Alfresco** | ≈ 4–7 (BD + content store + Solr) | ≈ 2 (BD + content store) | **≈ 1.560–2.100 I/O** (2,9× central) repartidas en 3 subsistemas |
 
 ***Tabla 4.** Amplificación de I/O: I/O física generada por 600 ops/seg lógicas en cada plataforma. **Fuente:** factor ≈1 de S3 según su modelo de objetos [1]; factores de Alfresco estimados a partir de su arquitectura de tres capas [6][7][8] (el content store fue el disco con mayor cola en [7]). Cálculo de elaboración propia.*
 
-<svg viewBox="0 0 820 290" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
-  <rect x="0" y="0" width="820" height="290" rx="10" fill="#f7f9fb"/>
+> **Detalle del rango (Alfresco).** Con el factor central (5 por escritura, 2 por lectura): 180×5 + 420×2 = 900 + 840 = **1.740 I/O → 2,9×**. Extremo bajo (4 escr./2 lect.): 720 + 840 = 1.560 → **2,6×**. Extremo alto (7 escr./2 lect.): 1.260 + 840 = 2.100 → **3,5×**. El "≈1" de S3 es la I/O *gestionada por la aplicación*: internamente S3 replica cada objeto en ≥3 zonas de disponibilidad, pero de forma transparente y sin coste operativo para el usuario.
+
+<svg viewBox="0 0 820 270" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="0" y="0" width="820" height="270" rx="10" fill="#f7f9fb"/>
   <text x="410" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#1a2b34">I/O física generada por 600 ops/seg lógicas (180 escrituras + 420 lecturas)</text>
-  <text x="170" y="98" text-anchor="end" font-size="12" font-weight="700" fill="#9c5510">S3</text>
-  <rect x="180" y="80" width="200" height="34" rx="4" fill="#e07c1f"/>
-  <text x="280" y="102" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">≈ 600 I/O</text>
-  <text x="170" y="168" text-anchor="end" font-size="12" font-weight="700" fill="#2c7a6b">Alfresco</text>
-  <rect x="180" y="150" width="300" height="34" fill="#d9743a"/>
-  <text x="330" y="172" text-anchor="middle" font-size="11" fill="#ffffff">BD ≈ 900 I/O</text>
-  <rect x="480" y="150" width="200" height="34" fill="#4a6b8a"/>
-  <text x="580" y="172" text-anchor="middle" font-size="11" fill="#ffffff">Content ≈ 600 I/O</text>
-  <rect x="680" y="150" width="80" height="34" fill="#7a5aa8"/>
-  <text x="720" y="172" text-anchor="middle" font-size="10" fill="#ffffff">Solr</text>
-  <text x="410" y="225" text-anchor="middle" font-size="12" font-weight="700" fill="#a8521f">Alfresco ≈ 1.740 I/O totales · ~2,9× la I/O de S3 para la misma carga lógica</text>
+  <line x1="180" y1="220" x2="780" y2="220" stroke="#cdd6dd" stroke-width="1.5"/>
+  <text x="170" y="95" text-anchor="end" font-size="12" font-weight="700" fill="#9c5510">S3</text>
+  <rect x="180" y="78" width="193" height="34" rx="4" fill="#e07c1f"/>
+  <text x="383" y="100" font-size="12" font-weight="700" fill="#9c5510">≈ 600 I/O</text>
+  <text x="170" y="165" text-anchor="end" font-size="12" font-weight="700" fill="#2c7a6b">Alfresco</text>
+  <rect x="180" y="148" width="290" height="34" fill="#d9743a"/>
+  <text x="325" y="170" text-anchor="middle" font-size="11" fill="#ffffff">BD ~900</text>
+  <rect x="470" y="148" width="193" height="34" fill="#4a6b8a"/>
+  <text x="566" y="170" text-anchor="middle" font-size="11" fill="#ffffff">Content ~600</text>
+  <rect x="663" y="148" width="58" height="34" fill="#7a5aa8"/>
+  <text x="732" y="170" font-size="11" font-weight="700" fill="#553a7a">+Solr</text>
+  <text x="450" y="245" text-anchor="middle" font-size="12.5" font-weight="700" fill="#a8521f">Alfresco ≈ 1.560–2.100 I/O totales  ·  ~2,6–3,5× la I/O de S3 (2,9× central)</text>
 </svg>
 
 ***Figura 4.** I/O física generada por 600 ops/seg lógicas, desglosada por subsistema en Alfresco. **Fuente:** misma base de cálculo que la Tabla 4 (modelo S3 [1]; arquitectura de Alfresco [6][7][8]); elaboración propia.*
@@ -256,7 +276,7 @@ Esta amplificación es la causa de que Alfresco necesite **almacenamiento con IO
   <text x="416" y="160" font-size="10" fill="#9c5510">100–200 ms</text>
   <text x="200" y="198" text-anchor="end" font-size="11" font-weight="700" fill="#2c7a6b">Alfresco L/E</text>
   <rect x="210" y="182" width="380" height="26" rx="3" fill="#2c7a6b"/>
-  <text x="596" y="200" font-size="10" fill="#ffffff">&lt; 1.000 ms</text>
+  <text x="596" y="200" font-size="10" fill="#2c7a6b">&lt; 1.000 ms</text>
   <text x="200" y="238" text-anchor="end" font-size="11" font-weight="700" fill="#2c7a6b">Alfresco compleja</text>
   <rect x="210" y="222" width="545" height="26" rx="3" fill="#1f5e52"/>
   <text x="755" y="240" font-size="10" fill="#ffffff" text-anchor="end">&lt; 4.500 ms</text>
@@ -283,7 +303,7 @@ Esta amplificación es la causa de que Alfresco necesite **almacenamiento con IO
 | Dimensión | Amazon S3 | Alfresco Content Services |
 |-----------|-----------|---------------------------|
 | Capacidad nominal | ≥ 3.500 escr. / ≥ 5.500 lect. **por prefijo** [1] | ~100–140 ops/seg **por nodo** [6][7] |
-| Recursos para 600 ops/seg | 1 prefijo (5–8 % de uso) | 4–6 nodos repo + Solr + BD con IOPS |
+| Recursos para 600 ops/seg | 1 prefijo (5–8 % de uso) | 5–6 nodos repo + Solr + BD con IOPS |
 | *Headroom* a 600 ops/seg | ~13–19× | Ajustado; escala añadiendo nodos/*shards* |
 | Amplificación de I/O | ≈ 1× | ≈ 4–7× (escritura) / ≈ 2× (lectura) |
 | Latencia típica | ~20 ms p90 [5]; 100–200 ms guía [3] | < 1 s; hasta 4,5 s en operaciones complejas [6][7] |
@@ -301,7 +321,7 @@ Esta amplificación es la causa de que Alfresco necesite **almacenamiento con IO
 
 1. **Si el requisito es exclusivamente throughput de almacenamiento a 600 ops/seg → Amazon S3.** El objetivo cabe holgadamente en un único prefijo (5–8 % de su capacidad, ~13–19× de margen) [1][2], con amplificación de I/O ≈ 1 y sin necesidad de dimensionar ni operar infraestructura con estado. Es la opción de menor latencia, menor complejidad operativa y mayor *headroom*.
 
-2. **Si el requisito incluye capacidades ECM (búsqueda full-text, metadatos ricos, versionado, permisos finos, flujos de trabajo) → Alfresco**, aceptando que sostener 600 ops/seg implica **4–6 nodos de repositorio + Solr + base de datos con IOPS provisionados** y una **amplificación de I/O de ~3×** sobre la carga lógica. Conviene presupuestar almacenamiento de alto IOPS para *content store* y base de datos, ya que son los cuellos de botella observados en benchmark [7].
+2. **Si el requisito incluye capacidades ECM (búsqueda full-text, metadatos ricos, versionado, permisos finos, flujos de trabajo) → Alfresco**, aceptando que sostener 600 ops/seg implica **5–6 nodos de repositorio + Solr + base de datos con IOPS provisionados** y una **amplificación de I/O de ~2,6–3,5× (≈2,9× central)** sobre la carga lógica. Conviene presupuestar almacenamiento de alto IOPS para *content store* y base de datos, ya que son los cuellos de botella observados en benchmark [7].
 
 3. **Arquitectura híbrida (recomendada en la mayoría de casos reales).** Usar **Alfresco como capa de gestión documental** (metadatos, búsqueda, permisos, flujos) y **S3 como *content store* subyacente**. Alfresco soporta almacenes de contenido sobre S3, de modo que la I/O pesada de objetos la absorbe S3 (amplificación ≈ 1 en esa capa) mientras Alfresco conserva las funciones de ECM. Esto reduce la presión de IOPS sobre disco local y aprovecha el auto-escalado de S3.
 
