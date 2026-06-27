@@ -1,13 +1,11 @@
 ---
 layout: ../../layouts/ArticleLayout.astro
-title: "Investigación: Alfresco vs. Amazon S3 (600 ops/seg)"
-description: "Comparativa técnica de throughput e I/O entre Alfresco Content Services y Amazon S3 dimensionados a 600 operaciones por segundo."
-date: "2026-06-26"
+title: "Investigación: Solución basada en Alfresco vs. solución basada en Amazon S3 (a 600 ops/seg)"
+description: "Comparativa técnica de operaciones por segundo e I/O entre Alfresco Content Services y Amazon S3, tomando como referencia común 600 ops/seg."
+date: "2026-06-24"
 ---
 
-# Investigación: Solución basada en Alfresco vs. solución basada en Amazon S3 (a 600 ops/seg)
-
-> **Alcance del estudio:** comparativa técnica de **operaciones por segundo (ops/seg) e I/O** entre una arquitectura de gestión documental basada en **Alfresco Content Services (ACS)** y una arquitectura de almacenamiento de objetos basada en **Amazon S3**, dimensionando ambas para sostener un objetivo de **600 operaciones por segundo**.
+> **Alcance del estudio:** **comparativa técnica** de **operaciones por segundo (ops/seg) e I/O** entre una arquitectura de gestión documental basada en **Alfresco Content Services (ACS)** y una arquitectura de almacenamiento de objetos basada en **Amazon S3**, tomando como punto de referencia común un objetivo de **600 operaciones por segundo**. El propósito es **comparar y decidir**; el dimensionamiento que aquí se ofrece es **orientativo** y **no pretende sustituir un ejercicio de *sizing* de producción**.
 > **Fecha:** junio 2026 · **Tipo:** análisis técnico con datos numéricos y referencias.
 
 ---
@@ -21,7 +19,7 @@ Analizar y comparar **Alfresco vs. Amazon S3** en lo referente a **operaciones p
 3. Evaluar **latencia, concurrencia y headroom** (margen disponible sobre el objetivo).
 4. Emitir **recomendaciones** de cuándo conviene cada arquitectura.
 
-> ⚠️ **Aclaración metodológica.** Alfresco y S3 **no resuelven el mismo problema**. Alfresco es un **ECM** (gestión documental: metadatos, versionado, permisos finos, búsqueda full-text, flujos de trabajo); S3 es un **almacén de objetos** (durabilidad, escala y throughput sobre una API REST). Por eso la comparación "a 600 ops/seg" solo es justa si se define con precisión qué es una *operación* en cada caso. Esa definición se establece en la sección 3.1.
+> Nota: Alfresco y S3 **no resuelven el mismo problema**. Alfresco es un **ECM** (gestión documental: metadatos, versionado, permisos finos, búsqueda full-text, flujos de trabajo); S3 es un **almacén de objetos** (durabilidad, escala y throughput sobre una API REST). Por eso la comparación "a 600 ops/seg" solo es justa si se define con precisión qué es una *operación* en cada caso. Esa definición se establece en la sección 3.1.
 
 ---
 
@@ -36,24 +34,30 @@ Se priorizaron **documentación oficial del fabricante**, **whitepapers de bench
 | 3 | AWS — *Performance design patterns for Amazon S3* | Doc. oficial | Errores 503 *Slow Down* durante el escalado; backoff exponencial; latencias de decenas de ms en objetos < 512 KB |
 | 4 | AWS — *New Amazon S3 Express One Zone* | Doc. oficial | Clase de alto rendimiento: latencia de un dígito de ms, cientos de miles de req/seg |
 | 5 | dvassallo / **s3-benchmark** (GitHub) | Benchmark independiente | p90 de *time-to-first-byte* ≈ 20 ms con independencia del tamaño; ≈ 93 MB/s por hilo |
-| 6 | Alfresco / Amazon — *The Alfresco ECM 1 Billion Document Benchmark on AWS & Aurora* | Whitepaper benchmark | 1.000 docs/seg en 10 nodos (≈ **100 docs/seg por nodo**); 500 usuarios Share + 200 sesiones CMIS; respuesta < 4,5 s |
-| 7 | Unisys / Alfresco — *Alfresco Benchmark Report (bl100093)* | Whitepaper benchmark | 107 M documentos; **140 docs/seg**; respuesta lectura/escritura < 1 s; el *content store* fue el disco con mayor cola |
-| 8 | S. O'Kennedy — *Alfresco's Billion Documents, a Closer Look* (análisis técnico) | Análisis | Confirma ≈ 100 docs/seg por nodo de repositorio; buenas prácticas de tamaño de carpeta |
+| 6 | Alfresco / Amazon — *The Alfresco ECM 1 Billion Document Benchmark on AWS & Aurora* **(oct. 2015, Alfresco One 5.1)** | Whitepaper benchmark | 1.000 docs/seg en 10 nodos (≈ **100 docs/seg por nodo**); 500 usuarios Share + 200 sesiones CMIS; respuesta < 4,5 s |
+| 7 | Unisys / Alfresco — *Alfresco Benchmark Report (bl100093)* **(2007, Alfresco 2.2)** | Whitepaper benchmark | ~100 M documentos; **140 docs/seg**; respuesta lectura/escritura < 1 s; el *content store* fue el disco con mayor cola |
+| 8 | S. O'Kennedy — *Alfresco's Billion Documents, a Closer Look* **(2018, analiza el benchmark de 2015)** | Análisis | Confirma ≈ 100 docs/seg por nodo de repositorio; buenas prácticas de tamaño de carpeta |
 | 9 | Crest Infosolutions / IBM — *Performance benchmarking of ACS on Red Hat OpenShift (Power vs x86)* | Whitepaper benchmark | Caracterización de rendimiento de ACS sobre contenedores |
 | 10 | AWS re:Post — hilos sobre límites de request por prefijo y cuotas de cuenta | Soporte oficial | Existe cuota por cuenta además del límite por prefijo |
+| 11 | T. de la Fuente / Alfresco — *Sizing your Alfresco Platform* | Guía del fabricante | Modelo de capacidad por operación: cada operación pesa y toca capas distintas (escritura → Repo·Solr·BD; descarga → Repo) |
+| 12 | Alfresco / Hyland — *Set up clustering* (documentación oficial vigente) | Doc. oficial (actual) | El escalado actual sigue siendo horizontal: *clustering* para alta concurrencia/throughput, un componente por nodo, Solr y BD separados |
+| 13 | Alfresco / Hyland — *What's new* (ACS 23.1+) y notas de versión ACS 25.x/26.x | Doc. oficial (actual) | Producto vigente sobre *stack* moderno: Solr 9, Java 17, Tomcat 10, Spring 6, contenedores ARM64, despliegue Kubernetes/Helm |
 
-***Tabla 1.** Fuentes de información utilizadas en el estudio. **Fuente:** elaboración propia a partir de las referencias [1]–[10].*
+***Tabla 1.** Fuentes de información utilizadas en el estudio. **Fuente:** elaboración propia a partir de las referencias [1]–[13].*
 
 > Las cifras de Alfresco provienen de despliegues distribuidos (repositorio + índice Solr + base de datos); las de S3, de un servicio totalmente gestionado. Esta diferencia es central en el análisis.
+>
+> **Nota sobre las fuentes de Alfresco.** La tasa de throughput por nodo (≈100–140 docs/seg) procede de los benchmarks públicos de referencia [6][7] y sigue siendo el dato numérico publicado más citable. Lo relevante es que la **arquitectura que esos benchmarks describen no ha cambiado** y está **vigente en la documentación oficial actual** de Alfresco/Hyland: el escalado sigue siendo horizontal —*clustering* para alta concurrencia/throughput, índice Solr con *sharding* y base de datos transaccional separada— tal como recoge la guía de clustering vigente [12], sobre un *stack* moderno (ACS 25.x/26.x, Solr 9, Java 17, Tomcat 10, despliegue en Kubernetes/Helm) [13], y ACS se sigue *benchmarkeando* sobre infraestructura actual (Red Hat OpenShift en Power10/x86, 2024) [9]. Como el rendimiento por nodo del hardware actual (NVMe, CPU modernas, Aurora/PostgreSQL recientes) es muy superior al de 2007/2015, el dimensionamiento de este artículo es **conservador**: un despliegue moderno sostendría 600 ops/seg con **igual o menos** infraestructura que la aquí estimada.
 
 ---
 
 ## 3. Análisis técnico
 
-> **Nota metodológica — tres supuestos sobre los que descansan los cálculos.** Los datos de capacidad y latencia provienen de fuentes citadas (documentación oficial de AWS [1]–[4], benchmarks de Alfresco [6][7][8] y medición independiente [5]). Sobre ellos se aplican tres supuestos propios que conviene tener presentes, porque mueven los números derivados:
-> 1. **Mezcla de trabajo 70 % lectura / 30 % escritura.** Es un perfil ECM típico asumido, no medido. Cambiarla altera el reparto 420/180 y, en cascada, la amplificación de I/O y el dimensionamiento de nodos.
-> 2. **Factores de amplificación de I/O (≈4–7 por escritura, ≈2 por lectura).** Son estimaciones derivadas de la arquitectura de tres capas de Alfresco, no mediciones directas; por eso el resultado se expresa como rango (2,6–3,5×).
-> 3. **Latencia media de Alfresco ≈ 500 ms.** Es un promedio asumido entre el "< 1 s" típico y el "< 4,5 s" del peor caso de los benchmarks. Afecta solo al cálculo de concurrencia (Tabla 5); la conclusión cualitativa (~10× más concurrencia que S3) se mantiene en todo el rango razonable.
+> **Nota metodológica — qué es dato y qué es estimación.** La mayor parte de la comparación descansa en **datos con fuente**: los topes de S3 (3.500/5.500 por prefijo [1][2]), las latencias de S3 (~20 ms p90 [5]; 100–200 ms [3]), las tasas por nodo de Alfresco (100–140 docs/seg [6][7]) y sus latencias (< 1 s a < 4,5 s [6][7]). Las **conclusiones cualitativas del artículo no dependen de ningún supuesto** y se sostienen solo con esos hechos.
+> Sobre ellos hay **una única estimación propia** que conviene distinguir claramente, porque no es una medición:
+> - **Factores de amplificación de I/O de Alfresco (≈4–7 por escritura, ≈2 por lectura).** Se derivan de la semántica documentada de cada operación (una escritura toca content store + varias filas de BD + un evento Solr), pero **no están medidos**. Por eso, allí donde aparecen (Tabla 4, Figura 4) van marcados como **"(estimado)"** y deben leerse como **escenario ilustrativo**, no como dato al nivel de los 3.500/5.500 de AWS.
+>
+> No se asume ninguna latencia media inventada: la concurrencia (Tabla 5) se calcula con el **rango de latencia con fuente** de cada plataforma.
 
 ### 3.1 Modelo de comparación: ¿qué es una "operación"?
 
@@ -68,8 +72,7 @@ Para comparar de forma honesta, se define una **operación lógica** como una ac
 
 ***Tabla 2.** Equivalencia entre una operación lógica del usuario y la I/O que genera en cada plataforma. **Fuente:** elaboración propia a partir de la documentación de arquitectura de AWS S3 [1] y de Alfresco Content Services [6][7].*
 
-**Mezcla de trabajo asumida** (perfil ECM típico): **70 % lecturas / 30 % escrituras**.
-A 600 ops/seg → **420 lecturas/seg + 180 escrituras/seg**.
+El reparto entre lecturas y escrituras se trata de forma **genérica**: como se verá, las conclusiones de capacidad y de I/O se sostienen para **cualquier mezcla** lectura/escritura, por lo que no se fija un perfil concreto.
 
 ---
 
@@ -106,7 +109,7 @@ La diferencia estructural es que en **S3 una operación lógica ≈ una operaci�
   <text x="325" y="307" text-anchor="middle" font-size="10" fill="#553a7a">full-text</text>
   <text x="325" y="319" text-anchor="middle" font-size="10" fill="#553a7a">(1 I/O)</text>
   <rect x="60" y="360" width="300" height="70" rx="8" fill="#fff6f3" stroke="#d9743a" stroke-dasharray="4 3"/>
-  <text x="210" y="385" text-anchor="middle" font-size="13" font-weight="700" fill="#a8521f">1 escritura lógica  →  ≈ 4–7 I/O backend</text>
+  <text x="210" y="385" text-anchor="middle" font-size="13" font-weight="700" fill="#a8521f">1 escritura lógica  →  ≈ 4–7 I/O backend (est.)</text>
   <text x="210" y="408" text-anchor="middle" font-size="11" fill="#a8521f">Amplificación de I/O elevada</text>
   <rect x="420" y="55" width="380" height="395" rx="10" fill="#ffffff" stroke="#e07c1f" stroke-width="2"/>
   <text x="610" y="82" text-anchor="middle" font-size="15" font-weight="700" fill="#e07c1f">Amazon S3</text>
@@ -136,29 +139,31 @@ La diferencia estructural es que en **S3 una operación lógica ≈ una operaci�
 
 #### Amazon S3 — el objetivo cabe en un solo prefijo
 
-Los límites publicados por AWS son **≥ 3.500 escrituras/seg** y **≥ 5.500 lecturas/seg por prefijo**, sin límite en el número de prefijos [1][2]. Con la mezcla asumida (180 escrituras + 420 lecturas):
+Los límites publicados por AWS son **≥ 3.500 escrituras/seg** y **≥ 5.500 lecturas/seg por prefijo**, sin límite en el número de prefijos [1][2]. Como lectura y escritura tienen **topes separados que no compiten entre sí**, basta examinar los dos casos extremos para acotar el resultado **bajo cualquier mezcla**:
 
-- Escrituras: 180 / 3.500 = **5,1 %** de la capacidad de **un** prefijo → *headroom* ≈ **19×**.
-- Lecturas: 420 / 5.500 = **7,6 %** de la capacidad de **un** prefijo → *headroom* ≈ **13×**.
+- Caso peor (las 600 fueran **todo escrituras**): 600 / 3.500 = **17 %** de un prefijo → *headroom* ≈ **5,8×**.
+- Caso mejor (las 600 fueran **todo lecturas**): 600 / 5.500 = **11 %** de un prefijo → *headroom* ≈ **9,2×**.
+
+Es decir, **con cualquier reparto lectura/escritura, 600 ops/seg ocupan entre el 11 % y el 17 % de un único prefijo** y dejan **≥ 5,8× de margen**.
 
 <svg viewBox="0 0 820 320" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
   <rect x="0" y="0" width="820" height="320" rx="10" fill="#f7f9fb"/>
-  <text x="410" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#1a2b34">S3: carga a 600 ops/seg frente al límite de UN prefijo</text>
-  <line x1="170" y1="270" x2="780" y2="270" stroke="#cdd6dd" stroke-width="1.5"/>
-  <text x="160" y="120" text-anchor="end" font-size="12" font-weight="700" fill="#33485f">Escritura</text>
-  <rect x="170" y="100" width="382" height="32" rx="4" fill="#fde6cf" stroke="#e07c1f"/>
-  <text x="556" y="120" font-size="11" fill="#9c5510">límite ≥ 3.500/seg por prefijo</text>
-  <rect x="170" y="100" width="20" height="32" rx="4" fill="#e07c1f"/>
-  <text x="196" y="121" font-size="11" font-weight="700" fill="#9c5510">180/seg</text>
-  <text x="160" y="200" text-anchor="end" font-size="12" font-weight="700" fill="#33485f">Lectura</text>
-  <rect x="170" y="180" width="600" height="32" rx="4" fill="#fde6cf" stroke="#e07c1f"/>
-  <text x="470" y="200" font-size="11" fill="#9c5510" text-anchor="middle">límite ≥ 5.500/seg por prefijo</text>
-  <rect x="170" y="180" width="46" height="32" rx="4" fill="#e07c1f"/>
-  <text x="222" y="201" font-size="11" font-weight="700" fill="#9c5510">420/seg</text>
-  <text x="410" y="258" text-anchor="middle" font-size="12" fill="#356b60" font-weight="700">A 600 ops/seg se usa el 5–8 % de un único prefijo: ~13–19× de margen, sin diseño especial</text>
+  <text x="410" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#1a2b34">S3: 600 ops/seg frente al límite de UN prefijo (cualquier mezcla)</text>
+  <line x1="200" y1="270" x2="780" y2="270" stroke="#cdd6dd" stroke-width="1.5"/>
+  <text x="190" y="120" text-anchor="end" font-size="12" font-weight="700" fill="#33485f">Todo escritura</text>
+  <rect x="200" y="100" width="560" height="32" rx="4" fill="#fde6cf" stroke="#e07c1f"/>
+  <text x="650" y="120" font-size="11" fill="#9c5510">límite ≥ 3.500/seg</text>
+  <rect x="200" y="100" width="96" height="32" rx="4" fill="#e07c1f"/>
+  <text x="306" y="121" font-size="11" font-weight="700" fill="#9c5510">600/seg = 17 %</text>
+  <text x="190" y="200" text-anchor="end" font-size="12" font-weight="700" fill="#33485f">Todo lectura</text>
+  <rect x="200" y="180" width="560" height="32" rx="4" fill="#fde6cf" stroke="#e07c1f"/>
+  <text x="650" y="200" font-size="11" fill="#9c5510">límite ≥ 5.500/seg</text>
+  <rect x="200" y="180" width="61" height="32" rx="4" fill="#e07c1f"/>
+  <text x="271" y="201" font-size="11" font-weight="700" fill="#9c5510">600/seg = 11 %</text>
+  <text x="410" y="255" text-anchor="middle" font-size="12" fill="#356b60" font-weight="700">Bajo cualquier reparto: 11–17 % de un único prefijo · headroom ≥ 5,8× · sin diseño especial</text>
 </svg>
 
-***Figura 2.** Carga de 600 ops/seg (180 escrituras + 420 lecturas) frente al límite de un único prefijo de S3. **Fuente:** límites de 3.500 escr./5.500 lect. por prefijo de la documentación oficial de AWS [1][2]; cálculo de porcentajes y headroom de elaboración propia.*
+***Figura 2.** Carga de 600 ops/seg frente al límite de un único prefijo de S3, en los dos casos extremos (todo escritura y todo lectura). **Fuente:** límites de 3.500 escr./5.500 lect. por prefijo de la documentación oficial de AWS [1][2]; porcentajes y headroom de elaboración propia. La conclusión es robusta a cualquier mezcla.*
 
 #### Alfresco — el objetivo requiere dimensionar un clúster
 
@@ -166,19 +171,19 @@ Los benchmarks sitúan el rendimiento de **un nodo de repositorio** en torno a *
 
 Dimensionamiento estimado para **600 ops/seg** (cifras orientativas derivadas de [6][7][8]):
 
-> **Sobre el rango de nodos.** Las tasas de benchmark (100–140 docs/seg por nodo) son de **ingesta (escritura)**. Si se tratan como ops mixtas directas, el resultado conservador es 600 ÷ 100 = **6 nodos** a 600 ÷ 140 ≈ **5 nodos**. Solo bajo un modelo de "presupuesto de I/O" (donde las lecturas, ≈2 I/O, cuestan menos que las escrituras, ≈5 I/O) y con la mezcla 70/30, la capacidad mixta por nodo sube a ~172 ops/seg y bastarían **4 nodos**. Por eso el límite inferior de 4 es optimista y se reserva para cargas muy intensivas en lectura.
+> **Sobre el rango de nodos.** Las tasas de benchmark (100–140 docs/seg por nodo) son de **ingesta (escritura)**, el caso más costoso. Tratándolas directamente como capacidad por nodo, el objetivo de 600 ops/seg sale de dividir: 600 ÷ 140 ≈ **5 nodos** (extremo favorable) a 600 ÷ 100 = **6 nodos** (extremo conservador). De ahí el **rango de referencia de 5–6 nodos**. Como las lecturas son más baratas que las escrituras, una carga con predominio de lectura tiende al extremo inferior del rango.
 
 | Capa | Métrica de referencia | Necesidad estimada a 600 ops/seg |
 |------|-----------------------|----------------------------------|
-| Repositorio ACS | ~100–140 ops/seg por nodo | **5–6 nodos** (4 solo si la carga es muy intensiva en lectura) |
+| Repositorio ACS | ~100–140 ops/seg por nodo | **5–6 nodos** |
 | Motor de índice (Solr) | indexación > 2.000 docs/seg con *sharding* [6] | 1+ *shard*; *sharding* recomendado a escala |
 | Base de datos | el cuello frecuente en escritura | Instancia con IOPS provisionados / Aurora |
 | Content store | disco con mayor cola en pruebas [7] | Almacenamiento con IOPS dedicados |
 
 ***Tabla 3.** Dimensionamiento estimado por capa para sostener 600 ops/seg en Alfresco. **Fuente:** métricas de referencia de los benchmarks [6][7][8]; estimación de necesidades de elaboración propia.*
 
-<svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
-  <rect x="0" y="0" width="820" height="300" rx="10" fill="#f7f9fb"/>
+<svg viewBox="0 0 820 312" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="0" y="0" width="820" height="312" rx="10" fill="#f7f9fb"/>
   <text x="410" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#1a2b34">Alfresco: nodos de repositorio para alcanzar 600 ops/seg</text>
   <line x1="120" y1="250" x2="780" y2="250" stroke="#cdd6dd" stroke-width="1.5"/>
   <line x1="120" y1="80"  x2="780" y2="80"  stroke="#d9743a" stroke-width="1.5" stroke-dasharray="6 4"/>
@@ -204,9 +209,10 @@ Dimensionamiento estimado para **600 ops/seg** (cifras orientativas derivadas de
     <text x="685" y="56" text-anchor="middle" font-size="10" font-weight="700" fill="#1f5e52">660 ✓</text>
   </g>
   <text x="125" y="255" text-anchor="end" font-size="10" fill="#7c8a93">ops/seg</text>
+  <text x="410" y="293" text-anchor="middle" font-size="10.5" fill="#7c8a93">Con ~110 ops/seg/nodo (conservador) hacen falta 6 nodos; a ~120+ ops/seg/nodo bastan 5 → rango 5–6 (Tabla 3)</text>
 </svg>
 
-***Figura 3.** Capacidad acumulada al añadir nodos de repositorio Alfresco (≈ 110 ops/seg por nodo) hasta superar el objetivo de 600 ops/seg. **Fuente:** rendimiento por nodo derivado de los benchmarks de Alfresco [6][7]; proyección lineal de elaboración propia.*
+***Figura 3.** Capacidad acumulada al añadir nodos de repositorio Alfresco hasta superar el objetivo de 600 ops/seg. **Fuente:** rendimiento por nodo derivado de los benchmarks de Alfresco [6][7]; proyección lineal de elaboración propia.*
 
 > **Conclusión de capacidad:** S3 sostiene 600 ops/seg **sin diseño adicional** (un solo prefijo, servicio gestionado). Alfresco sostiene 600 ops/seg pero **requiere dimensionar y operar 3 capas** (repositorio, índice, base de datos) con redundancia.
 
@@ -216,35 +222,49 @@ Dimensionamiento estimado para **600 ops/seg** (cifras orientativas derivadas de
 
 La métrica más reveladora a igual carga de **600 ops/seg lógicas** es cuánta **I/O física** se genera realmente en el backend.
 
-| Plataforma | I/O por escritura | I/O por lectura | I/O física total estimada a 600 ops/seg (180 E / 420 L) |
+| Plataforma | I/O por escritura | I/O por lectura | Amplificación agregada a 600 ops/seg (según mezcla L/E) |
 |-----------|-------------------|-----------------|---------------------------------------------------------|
-| **Amazon S3** | ≈ 1 | ≈ 1 | **≈ 600 ops** de almacenamiento (gestionadas/transparentes) |
-| **Alfresco** | ≈ 4–7 (BD + content store + Solr) | ≈ 2 (BD + content store) | **≈ 1.560–2.100 I/O** (2,9× central) repartidas en 3 subsistemas |
+| **Amazon S3** | ≈ 1 | ≈ 1 | **≈ 1×** (dato) — ≈ 600 I/O de almacenamiento, gestionadas/transparentes |
+| **Alfresco** *(estimado)* | ≈ 4–7 (BD + content store + Solr) | ≈ 2 (BD + content store) | **≈ 2× (todo lectura) a ≈ 5× (todo escritura)** · **~3×** en un perfil ECM con predominio de lectura — es decir, **≈ 1.200–3.000 I/O** repartidas en 3 subsistemas |
 
-***Tabla 4.** Amplificación de I/O: I/O física generada por 600 ops/seg lógicas en cada plataforma. **Fuente:** factor ≈1 de S3 según su modelo de objetos [1]; factores de Alfresco estimados a partir de su arquitectura de tres capas [6][7][8] (el content store fue el disco con mayor cola en [7]). Cálculo de elaboración propia.*
+***Tabla 4.** Amplificación de I/O. El factor de Alfresco es una **estimación**, no una medición. **Fuente:** modelo de objetos de S3 [1]; arquitectura de tres capas de Alfresco [6][7][8][11]; elaboración propia.*
 
-> **Detalle del rango (Alfresco).** Con el factor central (5 por escritura, 2 por lectura): 180×5 + 420×2 = 900 + 840 = **1.740 I/O → 2,9×**. Extremo bajo (4 escr./2 lect.): 720 + 840 = 1.560 → **2,6×**. Extremo alto (7 escr./2 lect.): 1.260 + 840 = 2.100 → **3,5×**. El "≈1" de S3 es la I/O *gestionada por la aplicación*: internamente S3 replica cada objeto en ≥3 zonas de disponibilidad, pero de forma transparente y sin coste operativo para el usuario.
-
-<svg viewBox="0 0 820 270" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
-  <rect x="0" y="0" width="820" height="270" rx="10" fill="#f7f9fb"/>
-  <text x="410" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#1a2b34">I/O física generada por 600 ops/seg lógicas (180 escrituras + 420 lecturas)</text>
-  <line x1="180" y1="220" x2="780" y2="220" stroke="#cdd6dd" stroke-width="1.5"/>
-  <text x="170" y="95" text-anchor="end" font-size="12" font-weight="700" fill="#9c5510">S3</text>
-  <rect x="180" y="78" width="193" height="34" rx="4" fill="#e07c1f"/>
-  <text x="383" y="100" font-size="12" font-weight="700" fill="#9c5510">≈ 600 I/O</text>
-  <text x="170" y="165" text-anchor="end" font-size="12" font-weight="700" fill="#2c7a6b">Alfresco</text>
-  <rect x="180" y="148" width="290" height="34" fill="#d9743a"/>
-  <text x="325" y="170" text-anchor="middle" font-size="11" fill="#ffffff">BD ~900</text>
-  <rect x="470" y="148" width="193" height="34" fill="#4a6b8a"/>
-  <text x="566" y="170" text-anchor="middle" font-size="11" fill="#ffffff">Content ~600</text>
-  <rect x="663" y="148" width="58" height="34" fill="#7a5aa8"/>
-  <text x="732" y="170" font-size="11" font-weight="700" fill="#553a7a">+Solr</text>
-  <text x="450" y="245" text-anchor="middle" font-size="12.5" font-weight="700" fill="#a8521f">Alfresco ≈ 1.560–2.100 I/O totales  ·  ~2,6–3,5× la I/O de S3 (2,9× central)</text>
+<svg viewBox="0 0 820 290" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="0" y="0" width="820" height="290" rx="10" fill="#f7f9fb"/>
+  <text x="410" y="28" text-anchor="middle" font-size="16" font-weight="700" fill="#1a2b34">I/O física por operación (Alfresco es estimación)</text>
+  <rect x="470" y="42" width="12" height="12" fill="#d9743a"/><text x="487" y="52" font-size="10" fill="#555">BD</text>
+  <rect x="525" y="42" width="12" height="12" fill="#4a6b8a"/><text x="542" y="52" font-size="10" fill="#555">Content store</text>
+  <rect x="625" y="42" width="12" height="12" fill="#7a5aa8"/><text x="642" y="52" font-size="10" fill="#555">Solr</text>
+  <line x1="200" y1="240" x2="760" y2="240" stroke="#cdd6dd" stroke-width="1.5"/>
+  <text x="200" y="258" text-anchor="middle" font-size="9" fill="#7c8a93">0</text>
+  <text x="280" y="258" text-anchor="middle" font-size="9" fill="#7c8a93">1</text>
+  <text x="360" y="258" text-anchor="middle" font-size="9" fill="#7c8a93">2</text>
+  <text x="440" y="258" text-anchor="middle" font-size="9" fill="#7c8a93">3</text>
+  <text x="520" y="258" text-anchor="middle" font-size="9" fill="#7c8a93">4</text>
+  <text x="600" y="258" text-anchor="middle" font-size="9" fill="#7c8a93">5</text>
+  <text x="680" y="258" text-anchor="middle" font-size="9" fill="#7c8a93">6</text>
+  <text x="760" y="258" text-anchor="middle" font-size="9" fill="#7c8a93">7  (I/O backend)</text>
+  <text x="190" y="83" text-anchor="end" font-size="11.5" font-weight="700" fill="#9c5510">S3 · escritura</text>
+  <rect x="200" y="68" width="80" height="24" rx="3" fill="#e07c1f"/>
+  <text x="290" y="85" font-size="11" fill="#9c5510">≈ 1 (dato)</text>
+  <text x="190" y="119" text-anchor="end" font-size="11.5" font-weight="700" fill="#9c5510">S3 · lectura</text>
+  <rect x="200" y="104" width="80" height="24" rx="3" fill="#f0a050"/>
+  <text x="290" y="121" font-size="11" fill="#9c5510">≈ 1 (dato)</text>
+  <text x="190" y="163" text-anchor="end" font-size="11.5" font-weight="700" fill="#2c7a6b">Alfresco · escritura</text>
+  <rect x="200" y="148" width="240" height="24" fill="#d9743a"/>
+  <rect x="440" y="148" width="80" height="24" fill="#4a6b8a"/>
+  <rect x="520" y="148" width="80" height="24" fill="#7a5aa8"/>
+  <rect x="600" y="148" width="160" height="24" fill="none" stroke="#7a5aa8" stroke-dasharray="4 3"/>
+  <text x="600" y="143" text-anchor="middle" font-size="9" fill="#7c8a93">rango hasta 7</text>
+  <text x="528" y="190" text-anchor="middle" font-size="11" font-weight="700" fill="#2c7a6b">≈ 4–7 (est.)</text>
+  <text x="190" y="219" text-anchor="end" font-size="11.5" font-weight="700" fill="#2c7a6b">Alfresco · lectura</text>
+  <rect x="200" y="204" width="80" height="24" fill="#d9743a"/>
+  <rect x="280" y="204" width="80" height="24" fill="#4a6b8a"/>
+  <text x="370" y="221" font-size="11" font-weight="700" fill="#2c7a6b">≈ 2 (est.)</text>
+  <text x="410" y="280" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a8521f">Agregado a 600 ops/seg: ≈ 2× (todo lectura) a ≈ 5× (todo escritura) · ~3× en perfil ECM con predominio de lectura</text>
 </svg>
 
-***Figura 4.** I/O física generada por 600 ops/seg lógicas, desglosada por subsistema en Alfresco. **Fuente:** misma base de cálculo que la Tabla 4 (modelo S3 [1]; arquitectura de Alfresco [6][7][8]); elaboración propia.*
-
-Esta amplificación es la causa de que Alfresco necesite **almacenamiento con IOPS dedicados** para la base de datos y el content store, mientras que S3 absorbe la misma carga lógica de forma plana.
+***Figura 4.** I/O física por operación. Los factores de Alfresco son **estimación**, no medición. **Fuente:** modelo de objetos de S3 [1]; arquitectura de tres capas de Alfresco [6][7][8][11]; elaboración propia.*
 
 ---
 
@@ -284,15 +304,14 @@ Esta amplificación es la causa de que Alfresco necesite **almacenamiento con IO
 
 **Concurrencia necesaria (Ley de Little: `concurrencia = throughput × latencia`):**
 
-| Plataforma | Latencia media usada | Concurrencia para 600 ops/seg |
-|-----------|----------------------|-------------------------------|
-| S3 (p90 TTFB ~20–50 ms) | 0,05 s | 600 × 0,05 = **~30 conexiones** en vuelo |
-| S3 (guía 100–200 ms) | 0,15 s | 600 × 0,15 = **~90 conexiones** |
-| Alfresco (~500 ms media) | 0,50 s | 600 × 0,50 = **~300 operaciones** en vuelo |
+| Plataforma | Latencia (con fuente) | Concurrencia para 600 ops/seg |
+|-----------|------------------------|-------------------------------|
+| S3 — p90 TTFB | ~20 ms [5] | 600 × 0,02 = **~12 conexiones** en vuelo |
+| S3 — guía AWS | 100–200 ms [3] | 600 × 0,1–0,2 = **~60–120 conexiones** |
+| Alfresco — operación típica | < 1 s [7] | 600 × 1,0 ≈ **~600 operaciones** en vuelo |
+| Alfresco — operación compleja | < 4,5 s [6] | 600 × 4,5 ≈ **~2.700 operaciones** en vuelo |
 
-***Tabla 5.** Concurrencia en vuelo necesaria para sostener 600 ops/seg según la Ley de Little. **Fuente:** latencias de S3 [3][5] y de Alfresco [6][7]; aplicación de la Ley de Little (concurrencia = throughput × latencia) de elaboración propia.*
-
-> A igual objetivo de 600 ops/seg, Alfresco debe sostener **~10× más operaciones concurrentes en vuelo** que S3 por su mayor latencia por operación, lo que se traduce en mayores *thread pools*, conexiones de BD y memoria.
+***Tabla 5.** Concurrencia en vuelo necesaria para sostener 600 ops/seg según la Ley de Little. **Fuente:** latencias de S3 [3][5] y de Alfresco [6][7]; aplicación de la Ley de Little de elaboración propia.*
 
 ---
 
@@ -301,33 +320,33 @@ Esta amplificación es la causa de que Alfresco necesite **almacenamiento con IO
 | Dimensión | Amazon S3 | Alfresco Content Services |
 |-----------|-----------|---------------------------|
 | Capacidad nominal | ≥ 3.500 escr. / ≥ 5.500 lect. **por prefijo** [1] | ~100–140 ops/seg **por nodo** [6][7] |
-| Recursos para 600 ops/seg | 1 prefijo (5–8 % de uso) | 5–6 nodos repo + Solr + BD con IOPS |
-| *Headroom* a 600 ops/seg | ~13–19× | Ajustado; escala añadiendo nodos/*shards* |
-| Amplificación de I/O | ≈ 1× | ≈ 4–7× (escritura) / ≈ 2× (lectura) |
+| Recursos para 600 ops/seg | 1 prefijo (11–17 % de uso, cualquier mezcla) | 5–6 nodos repo + Solr + BD con IOPS |
+| *Headroom* a 600 ops/seg | ≥ 5,8× (cualquier mezcla) | Ajustado; escala añadiendo nodos/*shards* |
+| Amplificación de I/O | ≈ 1× (dato) | ≈ 4–7× escr. / ≈ 2× lect. — **≈ 2×–5× según mezcla (estimado)** |
 | Latencia típica | ~20 ms p90 [5]; 100–200 ms guía [3] | < 1 s; hasta 4,5 s en operaciones complejas [6][7] |
-| Concurrencia a 600 ops/seg | ~30–90 conexiones | ~300 operaciones en vuelo |
+| Concurrencia a 600 ops/seg | ~12–120 conexiones | ~600–2.700 operaciones en vuelo |
 | Operación bajo carga | Auto-escalado; 503 *Slow Down* temporales [3] | Requiere *sharding* de Solr y tuning de BD [6] |
 | Búsqueda full-text | No nativa | Nativa (Solr) |
 | Metadatos / permisos finos / versionado | Limitado (tags, ACL de objeto) | Nativo y rico |
 | Modelo operativo | Totalmente gestionado (serverless) | Autogestionado (3 capas con estado) |
 
-***Tabla 6.** Resumen comparativo Alfresco vs. Amazon S3 a 600 ops/seg. **Fuente:** consolidación de las secciones 3.1–3.5; datos de S3 [1][3][5] y de Alfresco [6][7] referenciados por celda.*
+***Tabla 6.** Resumen comparativo Alfresco vs. Amazon S3 a 600 ops/seg. **Fuente:** consolidación de las secciones 3.1–3.5.*
 
 ---
 
 ## 4. Recomendaciones
 
-1. **Si el requisito es exclusivamente throughput de almacenamiento a 600 ops/seg → Amazon S3.** El objetivo cabe holgadamente en un único prefijo (5–8 % de su capacidad, ~13–19× de margen) [1][2], con amplificación de I/O ≈ 1 y sin necesidad de dimensionar ni operar infraestructura con estado. Es la opción de menor latencia, menor complejidad operativa y mayor *headroom*.
+1. **Si el requisito es exclusivamente throughput de almacenamiento a 600 ops/seg → Amazon S3.** El objetivo cabe holgadamente en un único prefijo (**11–17 % de su capacidad bajo cualquier mezcla, ≥ 5,8× de margen**) [1][2], con amplificación de I/O ≈ 1 y sin necesidad de dimensionar ni operar infraestructura con estado.
 
-2. **Si el requisito incluye capacidades ECM (búsqueda full-text, metadatos ricos, versionado, permisos finos, flujos de trabajo) → Alfresco**, aceptando que sostener 600 ops/seg implica **5–6 nodos de repositorio + Solr + base de datos con IOPS provisionados** y una **amplificación de I/O de ~2,6–3,5× (≈2,9× central)** sobre la carga lógica. Conviene presupuestar almacenamiento de alto IOPS para *content store* y base de datos, ya que son los cuellos de botella observados en benchmark [7].
+2. **Si el requisito incluye capacidades ECM → Alfresco**, aceptando que sostener 600 ops/seg implica **5–6 nodos de repositorio + Solr + base de datos con IOPS provisionados** y una amplificación de I/O **estimada en ≈ 2×–5× según la mezcla lectura/escritura**.
 
-3. **Arquitectura híbrida (recomendada en la mayoría de casos reales).** Usar **Alfresco como capa de gestión documental** (metadatos, búsqueda, permisos, flujos) y **S3 como *content store* subyacente**. Alfresco soporta almacenes de contenido sobre S3, de modo que la I/O pesada de objetos la absorbe S3 (amplificación ≈ 1 en esa capa) mientras Alfresco conserva las funciones de ECM. Esto reduce la presión de IOPS sobre disco local y aprovecha el auto-escalado de S3.
+3. **Arquitectura híbrida (recomendada en la mayoría de casos reales).** Usar **Alfresco como capa de gestión documental** y **S3 como *content store* subyacente**. La I/O pesada de objetos la absorbe S3 (amplificación ≈ 1 en esa capa) mientras Alfresco conserva las funciones de ECM.
 
-4. **Dimensionar con margen y por capa.** Para Alfresco, no basta con sumar nodos de repositorio: a 600 ops/seg el límite suele aparecer en **base de datos** y **content store** por la amplificación de I/O. Aplicar ***sharding* de Solr** desde el diseño [6][8] y limitar el número de documentos por carpeta (buena práctica documentada) [7][8].
+4. **Dimensionar con margen y por capa.** Para Alfresco, a 600 ops/seg el límite suele aparecer en **base de datos** y **content store** por la amplificación de I/O. Aplicar ***sharding* de Solr** desde el diseño [6][8].
 
-5. **Para S3, planificar el escalado gradual.** Aunque 600 ops/seg es trivial, ante picos súbitos pueden aparecer respuestas **503 *Slow Down*** mientras el servicio escala; implementar **reintentos con backoff exponencial** y, si se requieren latencias de un dígito de ms, evaluar **S3 Express One Zone** [3][4].
+5. **Para S3, planificar el escalado gradual.** Ante picos súbitos pueden aparecer respuestas **503 *Slow Down***; implementar **reintentos con backoff exponencial** y evaluar **S3 Express One Zone** para latencias de un dígito de ms [3][4].
 
-6. **Validar con un benchmark propio.** Las cifras por nodo de Alfresco (~100–140 ops/seg) y de latencia de S3 (~20 ms p90) dependen de la mezcla de operaciones, tamaño de objeto, región y configuración [5][9]. Antes de fijar el dimensionamiento definitivo, ejecutar una prueba de carga con el perfil real (70/30 u otro) y los tamaños de fichero reales.
+6. **Validar con un benchmark propio.** Las cifras por nodo de Alfresco (~100–140 ops/seg) provienen de benchmarks de 2007 y 2015 [6][7] y el factor de amplificación de I/O (≈2×–5×) es **estimado**, no medido. Antes de fijar el dimensionamiento definitivo, ejecutar una prueba de carga con la versión actual del producto y el perfil de operaciones real.
 
 ---
 
@@ -337,13 +356,12 @@ Esta amplificación es la causa de que Alfresco necesite **almacenamiento con IO
 2. AWS — *Amazon S3 Announces Increased Request Rate Performance*. https://aws.amazon.com/about-aws/whats-new/2018/07/amazon-s3-announces-increased-request-rate-performance/
 3. AWS — *Performance design patterns for Amazon S3*. https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance-design-patterns.html
 4. AWS — *New Amazon S3 Express One Zone high performance storage class*. https://aws.amazon.com/blogs/aws/new-amazon-s3-express-one-zone-high-performance-storage-class/
-5. D. Vassallo — *s3-benchmark* (medición independiente de latencia/throughput). https://github.com/dvassallo/s3-benchmark
+5. D. Vassallo — *s3-benchmark*. https://github.com/dvassallo/s3-benchmark
 6. Alfresco / Amazon — *The Alfresco ECM 1 Billion Document Benchmark on AWS and Aurora*. https://www.slideshare.net/slideshow/the-alfresco-ecm-1-billion-document-benchmark-on-aws-and-aurora-benchmark-details-and-scalability-recommendations/54444004
 7. Unisys / Alfresco — *Alfresco Benchmark Report (bl100093)*. https://www.slideshare.net/slideshow/alfresco-benchmark-reportbl100093/5869700
 8. S. O'Kennedy — *Alfresco's Billion Documents – a Closer Look*. https://www.linkedin.com/pulse/alfrescos-billion-documents-closer-look-steven-o-kennedy
-9. Crest Infosolutions / IBM — *Performance benchmarking of Alfresco Content Services (ACS) on Red Hat OpenShift on IBM Power vs x86*. https://crestsolution.com/resources/whitepapers/performance-benchmarking-of-alfresco-content-services-acs-on-red-hat-openshift-on-ibm-power-vs-x86/
-10. AWS re:Post — *Understanding reading rate limit from a single prefix in S3* / *What's the max rate limit of s3 bucket access?*. https://repost.aws/questions/QUM5pQi20uSWK3lWoCH34W5w/understanding-reading-rate-limit-from-a-single-prefix-in-s3
-
----
-
-*Nota: las cifras de dimensionamiento de Alfresco (nodos para 600 ops/seg) y los factores de amplificación de I/O son estimaciones de ingeniería derivadas de los benchmarks citados y de la arquitectura de tres capas de ACS; deben validarse con una prueba de carga sobre el perfil de operaciones real antes de un diseño definitivo.*
+9. Crest Infosolutions / IBM — *Performance benchmarking of ACS on Red Hat OpenShift on IBM Power vs x86*. https://crestsolution.com/resources/whitepapers/performance-benchmarking-of-alfresco-content-services-acs-on-red-hat-openshift-on-ibm-power-vs-x86/
+10. AWS re:Post — *Understanding reading rate limit from a single prefix in S3*. https://repost.aws/questions/QUM5pQi20uSWK3lWoCH34W5w/understanding-reading-rate-limit-from-a-single-prefix-in-s3
+11. T. de la Fuente / Alfresco — *Sizing your Alfresco Platform*. https://www.slideshare.net/slideshow/sizing-your-alfrescoplatform/40139663
+12. Alfresco / Hyland — *Set up clustering*. https://docs.alfresco.com/content-services/latest/admin/cluster/
+13. Alfresco / Hyland — *What's new in Alfresco Content Services*. https://docs.alfresco.com/content-services/latest/release/
