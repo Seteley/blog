@@ -54,8 +54,6 @@ Se priorizaron **documentación oficial del fabricante**, **whitepapers de bench
 > 1. **Mezcla de trabajo 70 % lectura / 30 % escritura.** Es un perfil ECM típico asumido, no medido. Cambiarla altera el reparto 420/180 y, en cascada, la amplificación de I/O y el dimensionamiento de nodos.
 > 2. **Factores de amplificación de I/O (≈4–7 por escritura, ≈2 por lectura).** Son estimaciones derivadas de la arquitectura de tres capas de Alfresco, no mediciones directas; por eso el resultado se expresa como rango (2,6–3,5×).
 > 3. **Latencia media de Alfresco ≈ 500 ms.** Es un promedio asumido entre el "< 1 s" típico y el "< 4,5 s" del peor caso de los benchmarks. Afecta solo al cálculo de concurrencia (Tabla 5); la conclusión cualitativa (~10× más concurrencia que S3) se mantiene en todo el rango razonable.
->
-> La aritmética de cada cálculo es exacta; lo que conviene validar con una prueba de carga propia son estos tres supuestos.
 
 ### 3.1 Modelo de comparación: ¿qué es una "operación"?
 
